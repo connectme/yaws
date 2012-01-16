@@ -29,7 +29,7 @@
          getconf/0,
          stats/0,
          gs_status/0,
-         ssi/3,ssi/5,ssi/6
+         ssi/3, ssi/5, ssi/6
         ]).
 
 %% internal exports
@@ -76,7 +76,7 @@
                    cacertfile
                   }).
 
--define(elog(X,Y), error_logger:info_msg("*elog ~p:~p: " X,
+-define(elog(X, Y), error_logger:info_msg("*elog ~p:~p: " X,
                                          [?MODULE, ?LINE | Y])).
 
 
@@ -93,7 +93,7 @@ gs_status() ->
               receive {P, Stat} -> Stat end
       end, Pids).
 getconf() ->
-    gen_server:call(?MODULE,getconf, infinity).
+    gen_server:call(?MODULE, getconf, infinity).
 
 stats() ->
     {_S, Time} = status(),
@@ -173,7 +173,7 @@ init2(GC, Sconfs, RunMod, Embedded, FirstTime) ->
     case GC#gconf.mnesia_dir of
         MD when length(MD) > 0 ->
             yaws_debug:format("loading mnesia ~p~n", [MD]),
-            application:set_env(mnesia,dir,MD),
+            application:set_env(mnesia, dir, MD),
             mnesia:start();
         _ ->
             ok
@@ -301,7 +301,7 @@ handle_call(check_certs, _From, State) ->
 handle_call({update_sconf, NewSc}, From, State) ->
     case yaws_config:search_sconf(NewSc, State#state.pairs) of
         {Pid, OldSc, _Group} ->
-            case yaws_config:eq_sconfs(OldSc,NewSc) of
+            case yaws_config:eq_sconfs(OldSc, NewSc) of
                 true ->
                     error_logger:info_msg("Keeping conf for ~s intact\n",
                                           [yaws:sconf_to_srvstr(OldSc)]),
@@ -509,7 +509,7 @@ gserv(Top, GC, Group0) ->
                      l = Listen},
             Last = initial_acceptor(GS),
             gserv_loop(GS#gs{sessions = 1}, [], 0, Last);
-        {_,_,Err} ->
+        {_, _, Err} ->
             error_logger:format("Yaws: Failed to listen ~s:~w  : ~p~n",
                                 [inet_parse:ntoa(SC#sconf.listen),
                                  SC#sconf.port, Err]),
@@ -566,13 +566,13 @@ gserv_loop(GS, Ready, Rnum, Last) ->
             From ! {self(), GS},
             ?MODULE:gserv_loop(GS, Ready, Rnum, Last);
         {_From, next, Accepted} when Ready == [] ->
-            close_accepted_if_max(GS,Accepted),
+            close_accepted_if_max(GS, Accepted),
             New = acceptor(GS),
             GS2 = GS#gs{sessions = GS#gs.sessions + 1,
                         connections = GS#gs.connections + 1},
             ?MODULE:gserv_loop(GS2, Ready, Rnum, New);
         {_From, next, Accepted} ->
-        close_accepted_if_max(GS,Accepted),
+        close_accepted_if_max(GS, Accepted),
             [{_Then, R}|RS] = Ready,
             R ! {self(), accept},
          GS2 = GS#gs{connections=GS#gs.connections + 1},
@@ -729,7 +729,7 @@ gserv_loop(GS, Ready, Rnum, Last) ->
                 true ->
             Pid = OldSc#sconf.stats,
                     stop_ready(Ready, Last),
-                    GS2 = GS#gs{group =  lists:delete(OldSc,GS#gs.group)},
+                    GS2 = GS#gs{group =  lists:delete(OldSc, GS#gs.group)},
                     Ready2 = [],
             case ?sc_has_statistics(OldSc) of
             true ->
@@ -830,7 +830,7 @@ stop_ready(Ready, Last) ->
     exit(Last, shutdown),
 
     lists:foreach(
-      fun({_,Pid}) ->
+      fun({_, Pid}) ->
               Pid ! {self(), stop}
       end, Ready).
 
@@ -854,7 +854,7 @@ call_start_mod(SC) ->
                     spawn(Mod, start, [SC]);
                 Err ->
                     error_logger:format("Cannot load module ~p: ~p~n",
-                                        [Mod,Err])
+                                        [Mod, Err])
             end
     end.
 
@@ -1150,7 +1150,7 @@ aloop(CliSock, {IP,Port}, GS, Num) ->
             Call = case yaws_shaper:check(SC, IP) of
                        allow ->
                            call_method(Req#http_request.method,CliSock,
-                                       {IP,Port},Req,H);
+                                       {IP, Port}, Req, H);
                        {deny, Status, Msg} ->
                            deliver_xxx(CliSock, Req, Status, Msg)
                    end,
@@ -1242,7 +1242,7 @@ erase_transients() ->
             %% Need to keep init_db in case we do not enter aloop (i.e. init:db)
             %% again as R12B-5 requires proc_lib keys in dict while exiting...
             put(init_db, I),
-            lists:foreach(fun({K,V}) -> put(K,V) end, I)
+            lists:foreach(fun({K, V}) -> put(K, V) end, I)
     end.
 
 
@@ -1425,7 +1425,7 @@ decode_path({abs_path, Path}) ->
     OtherHeaders = Head#headers.other,
     Continue =
         case lists:keysearch("Expect", 3, OtherHeaders) of
-            {value, {_,_,"Expect",_,Value}} ->
+            {value, {_, _, "Expect", _, Value}} ->
                 Value;
             _ ->
                 ""
@@ -1875,8 +1875,8 @@ handle_auth(#arg{client_ip_port={IP,_}}=ARG, Auth_H,
     CMSpec = ets:match_spec_compile(MSpec),
 
     Ret1 = case Auth_methods of
-               #auth{users=[],pam=false,mod=[]} -> true;
-               _                                -> Ret
+               #auth{users=[], pam=false, mod=[]} -> true;
+               _                                  -> Ret
            end,
 
     case {AllowIPs, DenyIPs, Order} of
@@ -1927,23 +1927,22 @@ handle_auth(#arg{client_ip_port={IP,_}}=ARG, Auth_H,
             end
     end;
 
-handle_auth(_ARG, _Auth_H, #auth{users=[],pam=false,mod=[]}, true) ->
+handle_auth(_ARG, _Auth_H, #auth{users=[], pam=false, mod=[]}, true) ->
     true;
 
-handle_auth(ARG, _Auth_H, Auth_methods=#auth{users=[],pam=false,mod=[]}, Ret) ->
+handle_auth(ARG, _Auth_H, Auth_methods=#auth{users=[], pam=false, mod=[]}, Ret) ->
     maybe_auth_log({401, Auth_methods#auth.realm}, ARG),
     {Ret, Auth_methods};
 
 handle_auth(ARG, Auth_H, Auth_methods = #auth{mod = Mod}, Ret) when Mod /= [] ->
     case catch Mod:auth(ARG, Auth_methods) of
         {'EXIT', Reason} ->
-            StackTrace = erlang:get_stacktrace(),
             L = ?F("authmod crashed ~n~p:auth(~p, ~n ~p) \n"
                    "Reason: ~p~n"
                    "Stack: ~p~n",
                    [Mod, ARG, Auth_methods, Reason,
-                    StackTrace]),
-            handle_crash(ARG, L, {Reason, StackTrace}),
+                    erlang:get_stacktrace()]),
+            handle_crash(ARG, L),
             deliver_accumulated(ARG#arg.clisock),
             exit(normal);
 
@@ -2120,7 +2119,7 @@ handle_ut(CliSock, ARG, UT = #urltype{type = regular}, _N) ->
                                     end
                             end;
                         Line ->
-                            case member(ETag,yaws:split_sep(Line, $,)) of
+                            case member(ETag, yaws:split_sep(Line, $,)) of
                                 true ->
                                     yaws:outh_set_304_headers(Req, UT, H),
                                     maybe_set_page_options(),
@@ -2187,16 +2186,16 @@ handle_ut(CliSock, ARG, UT = #urltype{type = {unauthorized, Auth, Realm}}, N) ->
 handle_ut(CliSock, ARG, UT = #urltype{type = error}, N) ->
     Req = ARG#arg.req,
     H = ARG#arg.headers,
-    SC=get(sc),GC=get(gc),
+    SC=get(sc), GC=get(gc),
     case UT#urltype.type of
         error when SC#sconf.xtra_docroots == [] ->
             yaws:outh_set_dyn_headers(Req, H, UT),
             deliver_dyn_part(CliSock,
                              0, "404",
                              N,
-                             ARG,UT,
+                             ARG, UT,
                              fun(A)->(SC#sconf.errormod_404):
-                                         out404(A,GC,SC)
+                                         out404(A, GC, SC)
                              end,
                              fun(A)->finish_up_dyn_file(A, CliSock)
                              end
@@ -2258,7 +2257,7 @@ handle_ut(CliSock, ARG, UT = #urltype{type = appmod}, N) ->
     deliver_dyn_part(CliSock,
                      0, "appmod",
                      N,
-                     ARG,UT,
+                     ARG, UT,
                      fun(A)->Mod:out(A) end,
                      fun(A)->finish_up_dyn_file(A, CliSock) end
                     );
@@ -2272,9 +2271,9 @@ handle_ut(CliSock, ARG, UT = #urltype{type = cgi}, N) ->
     deliver_dyn_part(CliSock,
                      0, "cgi",
                      N,
-                     ARG,UT,
+                     ARG, UT,
                      fun(A)->yaws_cgi:call_cgi(
-                               A,flatten(UT#urltype.fullpath))
+                               A, flatten(UT#urltype.fullpath))
                      end,
                      fun(A)->finish_up_dyn_file(A, CliSock) end
                     );
@@ -2288,7 +2287,7 @@ handle_ut(CliSock, ARG, UT = #urltype{type = fcgi}, N) ->
     deliver_dyn_part(CliSock,
                      0, "fcgi",
                      N,
-                     ARG,UT,
+                     ARG, UT,
                      fun(A)->yaws_cgi:call_fcgi_responder(A)
                      end,
                      fun(A)->finish_up_dyn_file(A, CliSock)
@@ -2340,7 +2339,7 @@ handle_ut(CliSock, ARG, UT = #urltype{type = dav}, N) ->
             deliver_dyn_part(CliSock,
                              0, "dav",
                              N,
-                             ARG,UT,
+                             ARG, UT,
                              Next,
                              fun(A)->finish_up_dyn_file(A, CliSock)  end
                             )
@@ -2356,7 +2355,7 @@ handle_ut(CliSock, ARG, UT = #urltype{type = php}, N) ->
               {cgi, Exe} ->
                   fun(A)->
                           yaws_cgi:call_cgi(
-                            A,Exe,flatten(UT#urltype.fullpath)
+                            A, Exe, flatten(UT#urltype.fullpath)
                            )
                   end;
               {fcgi, {PhpFcgiHost, PhpFcgiPort}} ->
@@ -2370,7 +2369,7 @@ handle_ut(CliSock, ARG, UT = #urltype{type = php}, N) ->
                   fun(A) ->
                           PhpMod:PhpFun(A)
                   end;
-              {extern, {PhpNode,PhpMod,PhpFun}} ->
+              {extern, {PhpNode, PhpMod, PhpFun}} ->
                   fun(A) ->
                           %% Mod:Fun must return
                           rpc:call(PhpNode, PhpMod, PhpFun, [A], infinity)
@@ -2379,7 +2378,7 @@ handle_ut(CliSock, ARG, UT = #urltype{type = php}, N) ->
     deliver_dyn_part(CliSock,
                      0, "php",
                      N,
-                     ARG,UT,
+                     ARG, UT,
                      Fun,
                      fun(A)->finish_up_dyn_file(A, CliSock) end
                     ).
@@ -2432,7 +2431,7 @@ deliver_302(CliSock, _Req, Arg, Path) ->
 
 
 deliver_302_map(CliSock, Req, Arg,
-                {_Prefix,URL,Mode})  when is_record(URL,url) ->
+                {_Prefix, URL, Mode})  when is_record(URL, url) ->
     ?Debug("in redir 302 ",[]),
     H = get(outh),
     DecPath = safe_decode_path(Req#http_request.path),
@@ -2449,9 +2448,9 @@ deliver_302_map(CliSock, Req, Arg,
                       _Q ->
                           ["Location: ", NLocPath, "?", Q, "\r\n"]
                   end;
-              Mode == noappend,Q == [] ->
+              Mode == noappend, Q == [] ->
                   ["Location: ", LocPath, "\r\n"];
-              Mode == noappend,Q /= [] ->
+              Mode == noappend, Q /= [] ->
                   ["Location: ", LocPath, "?", Q, "\r\n"]
           end,
     Headers = Arg#arg.headers,
@@ -2557,7 +2556,7 @@ do_yaws(CliSock, ARG, UT, N) ->
                                               Es == 0 ->
             deliver_dyn_file(CliSock, Spec, ARG, UT, N);
         Other  ->
-            del_old_files(get(gc),Other),
+            del_old_files(get(gc), Other),
             {ok, [{errors, Errs}| Spec]} =
                 yaws_compile:compile_file(UT#urltype.fullpath),
             ?Debug("Spec for file ~s is:~n~p~n",[UT#urltype.fullpath, Spec]),
@@ -2589,14 +2588,14 @@ get_client_data(_CliSock, 0, Bs, _SSlBool) ->
 get_client_data(CliSock, Len, Bs, SSlBool) ->
     case yaws:cli_recv(CliSock, Len, SSlBool) of
         {ok, B} ->
-            get_client_data(CliSock, Len-size(B), [Bs,B], SSlBool);
+            get_client_data(CliSock, Len-size(B), [Bs, B], SSlBool);
         _Other ->
             error_logger:format("get_client_data: ~p~n", [_Other]),
             exit(normal)
     end.
 
 %% not nice to support this for ssl sockets
-get_chunked_client_data(CliSock,SSL) ->
+get_chunked_client_data(CliSock, SSL) ->
     SC  = get(sc),
     Val = erase(current_chunk_size),
     Len = if
@@ -2604,9 +2603,9 @@ get_chunked_client_data(CliSock,SSL) ->
                   %% Last chunk was already read.
                   undefined;
               Val =:= undefined ->
-                  yaws:setopts(CliSock, [binary, {packet, line}],SSL),
-                  N = yaws:get_chunk_num(CliSock,SSL),
-                  yaws:setopts(CliSock, [binary, {packet, raw}],SSL),
+                  yaws:setopts(CliSock, [binary, {packet, line}], SSL),
+                  N = yaws:get_chunk_num(CliSock, SSL),
+                  yaws:setopts(CliSock, [binary, {packet, raw}], SSL),
                   N;
               true ->
                   Val
@@ -2622,7 +2621,7 @@ get_chunked_client_data(CliSock,SSL) ->
             <<>>;
         Len =< SC#sconf.partial_post_size ->
             B = yaws:get_chunk(CliSock, Len, 0, SSL),
-            yaws:eat_crnl(CliSock,SSL),
+            yaws:eat_crnl(CliSock, SSL),
             {partial, list_to_binary(B)};
         true ->
             B = yaws:get_chunk(CliSock, SC#sconf.partial_post_size, 0, SSL),
@@ -2636,7 +2635,7 @@ get_chunked_client_data(CliSock,SSL) ->
 deliver_dyn_part(CliSock,                       % essential params
                  LineNo, YawsFile,              % for diagnostic output
                  CliDataPos0,                   % for `get_more' and `flush'
-                 Arg,UT,
+                 Arg, UT,
                  YawsFun,                       % call YawsFun(Arg)
                  DeliverCont                    % call DeliverCont(Arg)
                                                 % to continue normally
@@ -2710,7 +2709,7 @@ deliver_dyn_file(CliSock, Bin, [H|T], Arg, UT, N) ->
             deliver_dyn_part(CliSock, LineNo, YawsFile,
                              N, Arg, UT,
                              fun(A)->Mod:out(A) end,
-                             fun(A)->deliver_dyn_file(CliSock,Bin2,T,A,UT,0)
+                             fun(A)->deliver_dyn_file(CliSock, Bin2, T, A, UT,0)
                              end);
         {data, 0} ->
             deliver_dyn_file(CliSock, Bin, T, Arg, UT, N);
@@ -2837,7 +2836,7 @@ make_final_chunk(Data) ->
             CRNL = crnl(),
             case binary_size(Data) of
                 0 ->
-                    {0, ["0",CRNL,CRNL]};
+                    {0, ["0", CRNL, CRNL]};
                 S ->
                     {S, [yaws:integer_to_hex(S), CRNL, Data, CRNL,
                          "0", CRNL, CRNL]}
@@ -2960,7 +2959,7 @@ to_binary(L) when is_list(L) ->
 
 %% binary_size(X) -> size(to_binary(X)).
 
-binary_size(X) -> binary_size(0,X).
+binary_size(X) -> binary_size(0, X).
 
 binary_size(I, []) ->
     I;
@@ -3057,8 +3056,8 @@ handle_out_reply({ehtml, E}, _LineNo, _YawsFile,  _UT, ARG) ->
               {ok, Val} ->
                   accumulate_content(Val),
                   ok;
-              {error, ErrStr} ->
-                  handle_crash(ARG, ErrStr)
+              {error, ErrStr, CrashInfo} ->
+                  handle_crash(ARG, ErrStr, CrashInfo)
           end,
     Res;
 
@@ -3069,7 +3068,7 @@ handle_out_reply({exhtml, E}, _LineNo, _YawsFile,  _UT, A) ->
                   accumulate_content(Val),
                   ok;
               {error, ErrStr} ->
-                  handle_crash(A,ErrStr)
+                  handle_crash(A, ErrStr)
           end,
     Res;
 
@@ -3080,7 +3079,7 @@ handle_out_reply({exhtml, Value2StringF, E}, _LineNo, _YawsFile,  _UT, A) ->
                   accumulate_content(Val),
                   ok;
               {error, ErrStr} ->
-                  handle_crash(A,ErrStr)
+                  handle_crash(A, ErrStr)
           end,
     Res;
 
@@ -3090,7 +3089,7 @@ handle_out_reply({sexhtml, E}, _LineNo, _YawsFile,  _UT, A) ->
                   accumulate_content(Val),
                   ok;
               {error, ErrStr} ->
-                  handle_crash(A,ErrStr)
+                  handle_crash(A, ErrStr)
           end,
     Res;
 
@@ -3101,7 +3100,7 @@ handle_out_reply({sexhtml, Value2StringF, E},
                   accumulate_content(Val),
                   ok;
               {error, ErrStr} ->
-                  handle_crash(A,ErrStr)
+                  handle_crash(A, ErrStr)
           end,
     Res;
 
@@ -3219,7 +3218,7 @@ handle_out_reply({redirect_local, Path0, Status}, _LineNo,_YawsFile,_UT, ARG) ->
                        0 ->
                            [$/|P];
                        N ->
-                           [lists:sublist(RP, N),P]
+                           [lists:sublist(RP, N), P]
                    end;
                P ->
                    P
@@ -3247,12 +3246,13 @@ handle_out_reply(ok, _LineNo, _YawsFile, _UT, _ARG) ->
     ok;
 
 handle_out_reply({'EXIT', Err}, LineNo, YawsFile, _UT, ARG) ->
+    StackTrace = erlang:get_stacktrace(),
     L = ?F("~n~nERROR erlang  code  crashed:~n "
            "File: ~s:~w~n"
            "Reason: ~p~nReq: ~p~n"
            "Stack: ~p~n",
-           [YawsFile, LineNo, Err, ARG#arg.req, erlang:get_stacktrace()]),
-    handle_crash(ARG, L);
+           [YawsFile, LineNo, Err, ARG#arg.req, StackTrace]),
+    handle_crash(ARG, L, Err);
 
 handle_out_reply({throw, Class, Exc}, LineNo, YawsFile, _UT, ARG) ->
     L = ?F("~n~nERROR erlang code threw an uncaught exception:~n "
@@ -3388,8 +3388,8 @@ ssi(File, Delimiter, Bindings, UT, ARG, SC) ->
         _ ->
             case prim_file:read_file(FullPath) of
                 {ok, Bin} ->
-                    D =delim_split_file(Delimiter,binary_to_list(Bin),data,[]),
-                    ets:insert(SC#sconf.ets,{Key,D, Mtime}),
+                    D =delim_split_file(Delimiter, binary_to_list(Bin), data,[]),
+                    ets:insert(SC#sconf.ets,{Key, D, Mtime}),
                     ssi(File, Delimiter, Bindings, UT, ARG, SC);
                 {error, _} when SC#sconf.xtra_docroots /= [] ->
                     SC2 = SC#sconf{docroot = hd(SC#sconf.xtra_docroots),
@@ -3404,7 +3404,7 @@ ssi(File, Delimiter, Bindings, UT, ARG, SC) ->
                 {error, Rsn} ->
                     error_logger:format("Failed to read/ssi file ~p~n",
                                         [FullPath]),
-                    {error,Rsn}
+                    {error, Rsn}
             end
     end.
 
@@ -3426,18 +3426,18 @@ expand_parts([{var, V} |T] , Bs, Ack) ->
             case safe_ehtml_expand(E) of
                 {ok, Val} ->
                     expand_parts(T, Bs, [Val|Ack]);
-                {error, ErrStr} ->
+                {error, ErrStr, _CrashInfo} ->
                     erlang:error(ErrStr)
             end;
         {value, {_, Val}} ->
             expand_parts(T, Bs, [Val|Ack]);
         false  ->
-            case get({binding,V}) of
+            case get({binding, V}) of
                 undefined -> expand_parts(T, Bs, Ack);
                 Valb -> expand_parts(T, Bs, [Valb|Ack])
             end
     end;
-expand_parts([], _,Ack) ->
+expand_parts([], _, Ack) ->
     lists:reverse(Ack).
 
 
@@ -3459,16 +3459,16 @@ delim_split_file(Del, Data, State, Ack) ->
 
 
 delim_split([H|T], Odel, [H|T1], Ack, DAcc) ->
-    delim_split(T,Odel,T1,Ack, [H|DAcc]);
+    delim_split(T, Odel, T1, Ack, [H|DAcc]);
 delim_split([], _Odel, T, Ack, _DAcc) ->
-    {lists:reverse(Ack),T};
-delim_split([H|_T],Odel, [H1|T1], Ack, []) when H /= H1 ->
+    {lists:reverse(Ack), T};
+delim_split([H|_T], Odel, [H1|T1], Ack, []) when H /= H1 ->
     delim_split(Odel, Odel, T1, [H1|Ack], []);
-delim_split([H|_T],Odel, [H1|T1], Ack, DAcc) when H /= H1 ->
+delim_split([H|_T], Odel, [H1|T1], Ack, DAcc) when H /= H1 ->
     delim_split(Odel, Odel, T1, [H1|DAcc++Ack], []);
-delim_split(_,_,[],Ack,[]) ->
+delim_split(_,_,[], Ack,[]) ->
     {lists:reverse(Ack),[]};
-delim_split(_,_,[],Ack,DAcc) ->
+delim_split(_,_,[], Ack, DAcc) ->
     {lists:reverse(DAcc++Ack),[]}.
 
 
@@ -3488,7 +3488,7 @@ handle_crash(ARG, L, CrashInfo) ->
         {crashmsg, 4} -> [ARG, SC, L, CrashInfo]
     end,
     case catch apply(SC#sconf.errormod_crash, crashmsg, CrashParams) of
-        {content,MimeType,Cont} ->
+        {content, MimeType, Cont} ->
             yaws:outh_set_content_type(MimeType),
             accumulate_content(Cont),
             break;
@@ -3497,7 +3497,7 @@ handle_crash(ARG, L, CrashInfo) ->
             break;
         {ehtml, Term} ->
             case safe_ehtml_expand(Term) of
-                {error, Reason} ->
+                {error, Reason, _CrashInfo} ->
                     yaws:elog("~s", [Reason]),
                     %% Aghhh, yet another user crash :-(
                     T2 = [{h2, [], "Internal error"}, {hr},
@@ -3778,7 +3778,7 @@ unite_ranges(_, all) ->
     all;
 unite_ranges(R, error) ->
     R;
-unite_ranges({fromto, F0, T0, Tot},{fromto,F1,T1, Tot}) ->
+unite_ranges({fromto, F0, T0, Tot},{fromto, F1, T1, Tot}) ->
     {fromto,
      if F0 >= F1 -> F1;
         true -> F0
@@ -4064,7 +4064,7 @@ clear_ets(E) ->
 %% return #urltype record
 do_url_type(SC, GetPath, ArgDocroot, VirtualDir) ->
     ?Debug("do_url_type SC=~s~nGetPath=~p~nVirtualDir=~p~n",
-           [?format_record(SC,sconf), GetPath,VirtualDir]),
+           [?format_record(SC, sconf), GetPath, VirtualDir]),
 
 
     case GetPath of
@@ -4172,8 +4172,8 @@ do_url_type(SC, GetPath, ArgDocroot, VirtualDir) ->
                                       end;
                         _ ->
                             %%'floating' appmod mount.
-                            {PreSegments,PostSegments} =
-                                split_at_segment(Mount,RequestSegs,[]),
+                            {PreSegments, PostSegments} =
+                                split_at_segment(Mount, RequestSegs,[]),
                             Prepath = case PreSegments of
                                           "" ->
                                               "/";
@@ -4275,16 +4275,16 @@ active_appmod(AppMods, RequestSegs) ->
     %%Accumulator is of form {RequestSegs, {AppmodMountPoint,Mod}}
     Matched =
         lists:foldl(
-          fun(Pair,Acc) ->
+          fun(Pair, Acc) ->
                   {Mount, Mod, Excludes} = case Pair of
                                                {X, Y} -> {X, Y, []};
-                                               {X,Y,Z} -> {X,Y,Z}
+                                               {X, Y, Z} -> {X, Y, Z}
                                            end,
                   {ReqSegs, {LongestSoFar, _}} = Acc,
 
                   MountSegs = string:tokens(Mount,"/"),
                   case {is_excluded(ReqSegs, Excludes) ,
-                        lists:prefix(MountSegs,ReqSegs)} of
+                        lists:prefix(MountSegs, ReqSegs)} of
                       {true, _} ->
                           Acc;
                       {false, true} ->
@@ -4355,9 +4355,9 @@ is_excluded(RequestSegs, [ExcludeSegs|T]) ->
 %%(no elements contain slashes)
 split_at_segment(_, [], _Acc) ->
     false;
-split_at_segment(Seg,[Seg|Tail],Acc) ->
-    {lists:reverse(Acc),Tail};
-split_at_segment(Seg,[H|Tail],Acc) ->
+split_at_segment(Seg,[Seg|Tail], Acc) ->
+    {lists:reverse(Acc), Tail};
+split_at_segment(Seg,[H|Tail], Acc) ->
     split_at_segment(Seg, Tail, [H|Acc]).
 
 
@@ -4373,7 +4373,7 @@ split_at_segment(Seg,[H|Tail],Acc) ->
 %%
 %%i.e this is an inner function, so no sanity checks here.
 %%
-construct_fullpath(DocRoot,GetPath,VirtualDir) ->
+construct_fullpath(DocRoot, GetPath, VirtualDir) ->
     case VirtualDir of
         [] ->
             DocRoot ++ GetPath;
@@ -4381,7 +4381,7 @@ construct_fullpath(DocRoot,GetPath,VirtualDir) ->
             %%trim the virtual base off the GET request path before appending
             %% to DocRoot.
             %%(leaving one "/" - therefore don't add 1 to length)
-            DocRoot ++ string:substr(GetPath,length(VirtualDir))
+            DocRoot ++ string:substr(GetPath, length(VirtualDir))
     end
         .
 
@@ -4411,8 +4411,8 @@ try_index_file(DR, GetPath, VirtualDir) ->
     end.
 
 
-maybe_return_dir(DR, GetPath,VirtualDir) ->
-    case try_index_file(DR, GetPath,VirtualDir) of
+maybe_return_dir(DR, GetPath, VirtualDir) ->
+    case try_index_file(DR, GetPath, VirtualDir) of
         noindex ->
             FullPath = construct_fullpath(DR, GetPath, VirtualDir),
 
@@ -4493,7 +4493,7 @@ maybe_return_path_info(SC, Comps, RevFile, DR, VirtualDir) ->
 %% point', otherwise the Docroot that has been determined based on the full
 %%  request path becomes invalid!
 %%
-path_info_split(Comps,DR_Vdir) ->
+path_info_split(Comps, DR_Vdir) ->
     path_info_split(lists:reverse(Comps), DR_Vdir, []).
 
 path_info_split([H|T], {DR, VirtualDir}, AccPathInfo) ->
@@ -4515,14 +4515,14 @@ path_info_split([H|T], {DR, VirtualDir}, AccPathInfo) ->
 
                     TestPath = lists:flatten(lists:reverse(T)),
                     FullPath = construct_fullpath(DR, TestPath, VirtualDir) ++
-                        string:strip(H,right,$/),
+                        string:strip(H, right, $/),
 
                     ?Debug("Testing for script at: ~p~n", [FullPath]),
 
                     case prim_file:read_file_info(FullPath) of
                         {ok, FI} when FI#file_info.type == regular ->
                             {ok, FI, FullPath, lists:reverse(T),
-                             string:strip(H,right,$/), AccPathInfo, X, Mime};
+                             string:strip(H, right, $/), AccPathInfo, X, Mime};
                         {ok, FI} when FI#file_info.type == directory ->
                             %%just a case of a bad path starting at this point.
                             {not_a_script, error};
@@ -4742,21 +4742,21 @@ runmod2(GC, Mods) ->
 
 load_and_run(Mod, Debug) ->
     case code:ensure_loaded(Mod) of
-        {module,Mod} when Debug == false ->
+        {module, Mod} when Debug == false ->
             Mod:start();
-        {module,Mod} when Debug == true  ->
+        {module, Mod} when Debug == true  ->
             error_logger:info_msg("sync call ~p:start ~n",[Mod]),
             Mod:start();
         Error ->
             error_logger:error_msg("Loading '~w' failed, reason ~p~n",
-                                   [Mod,Error])
+                                   [Mod, Error])
     end.
 
 
 safe_ehtml_expand(X) ->
     case (catch ehtml_expand(X)) of
         {'EXIT', R} ->
-            {error, err_pre(R)};
+            {error, err_pre(R), R};
         Val ->
             {ok, Val}
     end.
@@ -4814,15 +4814,15 @@ vdirpath(SC, ARG, RequestPath) ->
     %% Accumulator is of form {RequestSegs,{VdirMountPoint,VdirPhysicalPath}}
     Matched =
         lists:foldl(
-          fun(ListItem,Acc) ->
+          fun(ListItem, Acc) ->
                   case ListItem of
-                      {"vdir",Vmap} ->
+                      {"vdir", Vmap} ->
 
-                          {ReqSegs,VdirSpec} = Acc,
+                          {ReqSegs, VdirSpec} = Acc,
 
                           [Virt |PhysParts] = string:tokens(Vmap," \t"),
                           VirtSegs = string:tokens(Virt,"/"),
-                          case lists:prefix(VirtSegs,ReqSegs) of
+                          case lists:prefix(VirtSegs, ReqSegs) of
                               true ->
                                   {LongestSoFar,_} = VdirSpec,
                                   if length(Virt) > length(LongestSoFar) ->
@@ -4857,8 +4857,8 @@ vdirpath(SC, ARG, RequestPath) ->
             %% appmod or arg_rewrite_mod.
             %% Therefore we need to get it directly from the sconf record.
 
-            Result = {"",SC#sconf.docroot};
-        {_RequestSegs, {Virt,DocRoot }} ->
+            Result = {"", SC#sconf.docroot};
+        {_RequestSegs, {Virt, DocRoot }} ->
             %%sanitize Virt & DocRoot so that they are correct with
             %% regards to leading & trailing slashes
             case string:right(Virt,1) of
@@ -4867,7 +4867,7 @@ vdirpath(SC, ARG, RequestPath) ->
                 _ ->
                     VirtualDir = Virt ++ "/"
             end,
-            DR = string:strip(DocRoot,right,$/),
+            DR = string:strip(DocRoot, right, $/),
 
             Result = {VirtualDir, DR}
     end,
