@@ -59,7 +59,7 @@
              certinfo,      %% undefined | #certinfo{}
              l,             %% listen socket
              mnum = 0,
- 	     connections = 0, %% number of TCP connections opened now
+          connections = 0, %% number of TCP connections opened now
              sessions = 0,  %% number of active HTTP sessions
              reqs = 0}).    %% total number of processed HTTP requests
 
@@ -348,14 +348,14 @@ handle_call({add_sconf, SC}, From, State) ->
     case yaws_config:search_group(SC, State#state.pairs) of
         [{Pid, Group}] ->
             Pid ! {add_sconf, From, SC, self()},
-	    receive
-		{added_sconf, Pid, SC2} ->
-		    P2 = lists:keyreplace(Pid, 1, State#state.pairs,
-					  {Pid, Group ++ [SC2]}),
-		    {noreply, State#state{pairs = P2}}
-	    after 2000 ->
-		    {reply, {error, "Failed to add new conf"}, State}
-	    end;
+        receive
+        {added_sconf, Pid, SC2} ->
+            P2 = lists:keyreplace(Pid, 1, State#state.pairs,
+                      {Pid, Group ++ [SC2]}),
+            {noreply, State#state{pairs = P2}}
+        after 2000 ->
+            {reply, {error, "Failed to add new conf"}, State}
+        end;
         [] ->
             %% Need to create a new group
             error_logger:info_msg("Creating new virt server ~s\n",
@@ -482,15 +482,15 @@ gserv(Top, GC, Group0) ->
     put(gc, GC),
     put(top, Top),
     Group1 = map(fun(SC) -> setup_ets(SC)
-		 end, Group0),
+         end, Group0),
     Group = map(fun(SC) ->
-			case ?sc_has_statistics(SC) of
-			    true ->
-				start_stats(SC);
-			    false ->
-				SC
-			end
-		end, Group1),
+            case ?sc_has_statistics(SC) of
+                true ->
+                start_stats(SC);
+                false ->
+                SC
+            end
+        end, Group1),
     SC = hd(Group),
     case do_listen(GC, SC) of
         {SSLBOOL, CertInfo, {ok, Listen}} ->
@@ -578,14 +578,14 @@ gserv_loop(GS, Ready, Rnum, Last) ->
                         connections = GS#gs.connections + 1},
             ?MODULE:gserv_loop(GS2, Ready, Rnum, New);
         {_From, next, Accepted} ->
-	    close_accepted_if_max(GS,Accepted),
+        close_accepted_if_max(GS,Accepted),
             [{_Then, R}|RS] = Ready,
             R ! {self(), accept},
- 	    GS2 = GS#gs{connections=GS#gs.connections + 1},
+         GS2 = GS#gs{connections=GS#gs.connections + 1},
             ?MODULE:gserv_loop(GS2, RS, Rnum-1, R);
-	{_From, decrement} ->
- 	    GS2 = GS#gs{connections=GS#gs.connections - 1},
- 	    ?MODULE:gserv_loop(GS2, Ready, Rnum, Last);
+    {_From, decrement} ->
+         GS2 = GS#gs{connections=GS#gs.connections - 1},
+         ?MODULE:gserv_loop(GS2, Ready, Rnum, Last);
         {From, done_client, Int} ->
             GS2 = if
                       Int == 0 -> GS#gs{connections = GS#gs.connections - 1};
@@ -693,20 +693,20 @@ gserv_loop(GS, Ready, Rnum, Last) ->
                                            [OldSc, GS#gs.group]),
                     erlang:error(nosc);
                 true ->
-		    Pid = OldSc#sconf.stats,
-		    error_logger:info_msg("update_sconf: Stats pid ~p~n",[Pid]),
-		    case Pid of
-			undefined ->
-			    ok;
-			Pid when is_pid(Pid) ->
-			    yaws_stats:stop(Pid)
-		    end,
-		    NewSc1 = case ?sc_has_statistics(NewSc) of
-				 true ->
-				     start_stats(NewSc);
-				 false ->
-				     NewSc
-			     end,
+            Pid = OldSc#sconf.stats,
+            error_logger:info_msg("update_sconf: Stats pid ~p~n",[Pid]),
+            case Pid of
+            undefined ->
+                ok;
+            Pid when is_pid(Pid) ->
+                yaws_stats:stop(Pid)
+            end,
+            NewSc1 = case ?sc_has_statistics(NewSc) of
+                 true ->
+                     start_stats(NewSc);
+                 false ->
+                     NewSc
+                 end,
                     stop_ready(Ready, Last),
                     NewSc2 = clear_ets_complete(NewSc1),
                     %% Need to insert the sconf at the same position
@@ -733,19 +733,19 @@ gserv_loop(GS, Ready, Rnum, Last) ->
                     error_logger:error_msg("gserv: No found SC ~n",[]),
                     erlang:error(nosc);
                 true ->
-		    Pid = OldSc#sconf.stats,
+            Pid = OldSc#sconf.stats,
                     stop_ready(Ready, Last),
                     GS2 = GS#gs{group =  lists:delete(OldSc,GS#gs.group)},
                     Ready2 = [],
-		    case ?sc_has_statistics(OldSc) of
-			true ->
-			    error_logger:info_msg("delete_sconf: Pid= ~p~n",
+            case ?sc_has_statistics(OldSc) of
+            true ->
+                error_logger:info_msg("delete_sconf: Pid= ~p~n",
                                                   [Pid]),
-			    yaws_stats:stop(Pid);
-			false ->
-			    ok
-		    end,
-		    ets:delete(OldSc#sconf.ets),
+                yaws_stats:stop(Pid);
+            false ->
+                ok
+            end,
+            ets:delete(OldSc#sconf.ets),
                     gen_server:reply(From, ok),
                     error_logger:info_msg("Deleting sconf for server ~s~n",
                                           [yaws:sconf_to_srvstr(OldSc)]),
@@ -754,17 +754,17 @@ gserv_loop(GS, Ready, Rnum, Last) ->
             end;
 
         {add_sconf, From, SC0, Adder} ->
-	    SC = case ?sc_has_statistics(SC0) of
-		     true ->
-			 {ok, Pid} = yaws_stats:start_link(),
-			 error_logger:info_msg("add_sconf: Pid= ~p~n", [Pid]),
-			 SC0#sconf{stats=Pid};
-		     false ->
-			 SC0
-		 end,
+        SC = case ?sc_has_statistics(SC0) of
+             true ->
+             {ok, Pid} = yaws_stats:start_link(),
+             error_logger:info_msg("add_sconf: Pid= ~p~n", [Pid]),
+             SC0#sconf{stats=Pid};
+             false ->
+             SC0
+         end,
             stop_ready(Ready, Last),
             SC2 = setup_ets(SC),
-	    GS2 = GS#gs{group =  GS#gs.group ++ [SC2]},
+        GS2 = GS#gs{group =  GS#gs.group ++ [SC2]},
             Ready2 = [],
             Adder ! {added_sconf, self(), SC2},
             gen_server:reply(From, ok),
@@ -777,7 +777,7 @@ gserv_loop(GS, Ready, Rnum, Last) ->
                 case GS#gs.ssl of
                     ssl ->
                         CertInfo = GS#gs.certinfo,
-			case lists:any(
+            case lists:any(
                                fun(SC) ->
                                        certinfo(SC#sconf.ssl) =/= CertInfo end,
                                GS#gs.group) of
@@ -992,17 +992,17 @@ acceptor0(GS, Top) ->
                         {error, closed} ->
                             Top ! {self(), decrement},
                             exit(normal);
-			{error, esslaccept} ->
-			    %% Don't log SSL esslaccept to error log since it
-			    %% seems this is what we get on portscans and
-			    %% similar
-			    ?Debug("SSL accept failed: ~p~n", [esslaccept]),
-			    Top ! {self(), decrement},
+            {error, esslaccept} ->
+                %% Don't log SSL esslaccept to error log since it
+                %% seems this is what we get on portscans and
+                %% similar
+                ?Debug("SSL accept failed: ~p~n", [esslaccept]),
+                Top ! {self(), decrement},
                             exit(normal);
                         {error, Reason} ->
                             error_logger:format("SSL accept failed: ~p~n",
                                                 [Reason]),
-			    Top ! {self(), decrement},
+                Top ! {self(), decrement},
                             exit(normal)
                     end;
                 true ->
@@ -1041,26 +1041,26 @@ acceptor0(GS, Top) ->
                 {ok, Int} when is_integer(Int) ->
                     Top ! {self(), done_client, Int};
                 {'EXIT', normal} ->
-		    Top ! {self(), decrement},
+            Top ! {self(), decrement},
                     exit(normal);
                 {'EXIT', shutdown} ->
                     exit(shutdown);
                 {'EXIT', {error, einval}} ->
                     %% Typically clients that close their end of the socket
                     %% don't log. Happens all the time.
-		    Top ! {self(), decrement},
+            Top ! {self(), decrement},
                     exit(normal);
                 {'EXIT', {{error, einval}, _}} ->
-		    Top ! {self(), decrement},
+            Top ! {self(), decrement},
                     exit(normal);
                 {'EXIT', {error, closed}} ->
-		    Top ! {self(), decrement},
+            Top ! {self(), decrement},
                     exit(normal);
                 {'EXIT', {{error, closed}, _}} ->
-		    Top ! {self(), decrement},
+            Top ! {self(), decrement},
                     exit(normal);
                 {'EXIT', {{error, econnreset},_}} ->
-		    Top ! {self(), decrement},
+            Top ! {self(), decrement},
                     exit(normal);
                 {'EXIT', Reason2} ->
                     error_logger:error_msg("Yaws process died: ~p~n",
@@ -1095,7 +1095,7 @@ acceptor0(GS, Top) ->
             end;
         {error, closed} ->
             %% This is what happens when we call yaws --stop
-	    Top ! {self(), decrement},
+        Top ! {self(), decrement},
             exit(normal);
         {error, Reason} when ((Reason == emfile) or
                                                    (Reason == enfile)) ->
@@ -1842,8 +1842,8 @@ is_auth(_ARG, _Req_dir, _H, [], {Ret, Auth_headers}) ->
 is_auth(ARG, Req_dir, H, [Auth_methods|T], {_Ret, Auth_headers}) ->
     Auth_H = H#headers.authorization,
     case handle_auth(ARG, Auth_H, Auth_methods, false) of
-		%% If we auth using an authmod we need to return User
-		%% so that we can set it in ARG.
+        %% If we auth using an authmod we need to return User
+        %% so that we can set it in ARG.
         {false, A} ->
             L = A#auth.headers,
             Auth_methods1 = Auth_methods#auth{realm = A#auth.realm,
@@ -1851,7 +1851,7 @@ is_auth(ARG, Req_dir, H, [Auth_methods|T], {_Ret, Auth_headers}) ->
             is_auth(ARG, Req_dir, H, T,
                     {{false, Auth_methods1, A#auth.realm}, L ++ Auth_headers});
         Is_auth -> %% true, {true, User} or false_403
-		    Is_auth
+            Is_auth
     end.
 
 handle_auth(#arg{client_ip_port={IP,_}}=ARG, Auth_H,
@@ -1941,12 +1941,13 @@ handle_auth(ARG, _Auth_H, Auth_methods=#auth{users=[],pam=false,mod=[]}, Ret) ->
 handle_auth(ARG, Auth_H, Auth_methods = #auth{mod = Mod}, Ret) when Mod /= [] ->
     case catch Mod:auth(ARG, Auth_methods) of
         {'EXIT', Reason} ->
+            StackTrace = erlang:get_stacktrace(),
             L = ?F("authmod crashed ~n~p:auth(~p, ~n ~p) \n"
                    "Reason: ~p~n"
                    "Stack: ~p~n",
                    [Mod, ARG, Auth_methods, Reason,
-                    erlang:get_stacktrace()]),
-            handle_crash(ARG, L),
+                    StackTrace]),
+            handle_crash(ARG, L, {Reason, StackTrace}),
             deliver_accumulated(ARG#arg.clisock),
             exit(normal);
 
@@ -1977,22 +1978,22 @@ handle_auth(ARG, undefined, Auth_methods, Ret) ->
 handle_auth(ARG, {User, Password, OrigString},
             Auth_methods = #auth{pam = Pam}, Ret) when Pam /= false ->
     case yaws_pam:auth(User, Password) of
-	{yes, _} ->
-	    maybe_auth_log({ok, User}, ARG),
-	    true;
-	{no, _Rsn} ->
-	    handle_auth(ARG, {User, Password, OrigString},
+    {yes, _} ->
+        maybe_auth_log({ok, User}, ARG),
+        true;
+    {no, _Rsn} ->
+        handle_auth(ARG, {User, Password, OrigString},
                         Auth_methods#auth{pam = false}, Ret)
     end;
 
 handle_auth(ARG, {User, Password, OrigString},
             Auth_methods = #auth{users = Users}, Ret) when Users /= [] ->
     case member({User, Password}, Users) of
-	true ->
-	    maybe_auth_log({ok, User}, ARG),
-	    true;
-	false ->
-	    handle_auth(ARG, {User, Password, OrigString},
+    true ->
+        maybe_auth_log({ok, User}, ARG),
+        true;
+    false ->
+        handle_auth(ARG, {User, Password, OrigString},
                         Auth_methods#auth{users = []}, Ret)
     end.
 
@@ -2406,7 +2407,7 @@ done_or_continue() ->
         true -> done;
         false -> continue;
         keep_alive -> continue;
-	undefined -> continue
+    undefined -> continue
     end.
 
 %% we may have content,
@@ -2760,12 +2761,12 @@ deliver_dyn_file(CliSock, _Bin, [], ARG,_UT,_N) ->
 stream_loop_send(Priv, CliSock, Timeout) ->
     {ok, FlushTimer} = timer:send_after(300, flush_timer),
     case Timeout of
-	infinity ->
-	    untimed_stream_loop_send(Priv, CliSock, FlushTimer);
-	_ ->
-	    {ok, TimeoutTimer} = timer:send_after(Timeout, timeout_timer),
-	    stream_loop_send(Priv, CliSock, Timeout,
-			     FlushTimer, TimeoutTimer)
+    infinity ->
+        untimed_stream_loop_send(Priv, CliSock, FlushTimer);
+    _ ->
+        {ok, TimeoutTimer} = timer:send_after(Timeout, timeout_timer),
+        stream_loop_send(Priv, CliSock, Timeout,
+                 FlushTimer, TimeoutTimer)
     end.
 
 untimed_stream_loop_send(Priv, CliSock, FlushTimer) ->
@@ -2924,14 +2925,14 @@ wait_for_streamcontent_pid(Priv, CliSock, ContentPid) ->
         discard ->
             ContentPid ! {discard, self()};
         _ ->
-	    SC = get(sc),
-	    case SC#sconf.ssl of
-		undefined ->
-		    gen_tcp:controlling_process(CliSock, ContentPid);
-		_ ->
-		    ssl:controlling_process(CliSock, ContentPid)
-	    end,
-	    ContentPid ! {ok, self()}
+        SC = get(sc),
+        case SC#sconf.ssl of
+        undefined ->
+            gen_tcp:controlling_process(CliSock, ContentPid);
+        _ ->
+            ssl:controlling_process(CliSock, ContentPid)
+        end,
+        ContentPid ! {ok, self()}
     end,
     receive
         endofstreamcontent ->
@@ -3438,15 +3439,22 @@ delim_split(_,_,[],Ack,DAcc) ->
 
 %% Erlang yaws code crashed, display either the
 %% actual crash or a customized error message
-
 handle_crash(ARG, L) ->
+    handle_crash(ARG, L, undefined).
+
+handle_crash(ARG, L, CrashInfo) ->
     ?Debug("handle_crash(~p)~n", [L]),
     SC=get(sc),
     yaws:outh_set_status_code(500),
-    case catch apply(SC#sconf.errormod_crash, crashmsg, [ARG, SC, L]) of
+    CrashMod = SC#sconf.errormod_crash,
+    CrashParams = case lists:keyfind(crashmsg, 1, CrashMod:module_info(exports)) of
+        {crashmsg, 3} -> [ARG, SC, L];
+        {crashmsg, 4} -> [ARG, SC, L, CrashInfo]
+    end,
+    case catch apply(SC#sconf.errormod_crash, crashmsg, CrashParams) of
         {content,MimeType,Cont} ->
-	   yaws:outh_set_content_type(MimeType),
-	   accumulate_content(Cont);
+            yaws:outh_set_content_type(MimeType),
+            accumulate_content(Cont);
         {html, Str} ->
             accumulate_content(Str),
             break;
@@ -3464,7 +3472,7 @@ handle_crash(ARG, L) ->
                     break
             end;
         Other ->
-            yaws:elog("Bad return value from errmod_crash ~n~p~n",[Other]),
+            yaws:elog("Bad return value from errormod_crash ~n~p~n",[Other]),
             T2 = [{h2, [], "Internal error"}, {hr},
                   {p, [], "Customized crash display code returned bad val"}],
             accumulate_content(ehtml_expand(T2)),
@@ -4791,7 +4799,7 @@ close_accepted_if_max(GS,{ok, Socket}) ->
     NumCon = GS#gs.connections,
     if
         NumCon < MaxCon ->
-	    ok;
+        ok;
         true ->
             S=case peername(Socket, GS#gs.ssl) of
                   {ok, {IP, Port}} ->
@@ -4801,7 +4809,7 @@ close_accepted_if_max(GS,{ok, Socket}) ->
               end,
             error_logger:format(
               "Max connections reached - closing conn to ~s~n",[S]),
-	    gen_tcp:close(Socket)
+        gen_tcp:close(Socket)
     end;
 close_accepted_if_max(_,_) ->
     ok.
