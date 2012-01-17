@@ -3280,9 +3280,7 @@ handle_out_reply(Reply, LineNo, YawsFile, _UT, ARG) ->
     L =  ?F("yaws code at ~s:~p crashed or "
             "ret bad val:~p ~nReq: ~p",
             [YawsFile, LineNo, Reply, ARG#arg.req]),
-    handle_crash(ARG, L).
-
-
+    handle_crash(ARG, L, Reply).
 
 handle_out_reply_l([Reply|T], LineNo, YawsFile, UT, ARG, Res) ->
     case handle_out_reply(Reply, LineNo, YawsFile, UT, ARG) of
@@ -3310,7 +3308,6 @@ handle_out_reply_l([Reply|T], LineNo, YawsFile, UT, ARG, Res) ->
     end;
 handle_out_reply_l([], _LineNo, _YawsFile, _UT, _ARG, Res) ->
     Res.
-
 
 count_trailing_spaces() ->
     case get(acc_content) of
