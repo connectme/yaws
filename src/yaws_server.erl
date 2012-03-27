@@ -3450,21 +3450,22 @@ handle_crash(ARG, L, CrashInfo) ->
         {crashmsg, 4} -> [ARG, SC, L, CrashInfo]
     end,
     Content = case catch apply(SC#sconf.errormod_crash, crashmsg, CrashParams) of
-        ListResult when is_list(ListResult) -> %% content + headers
-            HandleHeaders = fun({header, H}, Acc) ->
-                                    yaws:accumulate_header(Header),
-                                    Acc; %% filter out headers
-                                (E, Acc) ->
-                                    [E | Acc]
-                            end),
-            case lists:foldl(HandleHeaders, [], lists:flatten(ListResult)) of
+        {crash, Content0} ->
+            HandleHeaders = fun
+                ({header, Header}, Acc) ->
+                    yaws:accumulate_header(Header),
+                    Acc; %% filter out headers
+                (E, Acc) ->
+                    [E | Acc]
+            end,
+            case lists:foldl(HandleHeaders, [], lists:flatten(Content0)) of
                 [_Content] -> %% we expect only one section with content
                     _Content;
-                WrongReturn -> %% error, that will go to Other clause in next case statement
+                WrongReturn -> %% error, will be handled in Other clause below
                     {wrong_return, WrongReturn}
             end;
-        _Content -> %% old return format
-            _Content
+        Content0 -> %% old return format
+            Content0
     end,
     case Content of
         {content, MimeType, Cont} ->
