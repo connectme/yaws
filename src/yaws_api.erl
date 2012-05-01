@@ -434,7 +434,7 @@ parse_multi(Data, #mp_parse_state{state=start_headers}=ParseState,
             {cont, ParseState#mp_parse_state{old_data=Data}, Acc}
     end;
 parse_multi(Data, #mp_parse_state{state=headers}=ParseState, Acc, Name, Hdrs) ->
-    case erlang:decode_packet(httph_bin, Data, [{packet_size, 16#4000}]) of
+    case erlang:decode_packet(httph_bin, Data, [{packet_size, ?PACKET_SIZE}]) of
         {ok, http_eoh, Rest} ->
             %% All headers are parsed, get the body now
             Head = case Name of
