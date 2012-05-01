@@ -2011,7 +2011,7 @@ do_http_get_headers(CliSock, SSL) ->
 
 
 http_recv_request(CliSock, SSL) ->
-    setopts(CliSock, [{packet, http}, {packet_size, 16#4000}], SSL),
+    setopts(CliSock, [{packet, http}, {packet_size, ?PACKET_SIZE}], SSL),
     case do_recv(CliSock, 0,  SSL) of
         {ok, R} when is_record(R, http_request) ->
             R;
@@ -2032,7 +2032,7 @@ http_recv_request(CliSock, SSL) ->
     end.
 
 http_collect_headers(CliSock, Req, H, SSL, Count) when Count < 1000 ->
-    setopts(CliSock, [{packet, httph}, {packet_size, 16#4000}], SSL),
+    setopts(CliSock, [{packet, httph}, {packet_size, ?PACKET_SIZE}], SSL),
     Recv = do_recv(CliSock, 0, SSL),
     case Recv of
         {ok, {http_header,  _Num, 'Host', _, Host}} ->

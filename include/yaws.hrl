@@ -336,6 +336,7 @@
 %% error_logger:format("Err ~p at ~p~n", [Reason, ?stack()])
 -define(stack(), try throw(1) catch _:_ -> erlang:get_stacktrace() end).
 
+-define(PACKET_SIZE, 16#100000).
 
 %%% The following is for emacs, do not remove
 %%% Local Variables:
